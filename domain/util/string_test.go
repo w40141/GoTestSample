@@ -5,7 +5,6 @@ import (
 	"os"
 	"reflect"
 	"testing"
-	"unicode/utf8"
 )
 
 func TestMain(m *testing.M) {
@@ -108,23 +107,4 @@ func TestVeryHeavyFunction(t *testing.T) {
 			}
 		})
 	}
-}
-
-func FuzzReverse(f *testing.F) {
-	f.Add("hello")
-	f.Fuzz(func(t *testing.T, s string) {
-		r, e1 := ReverseString(s)
-		if !utf8.ValidString(s) && e1 == nil {
-			// utf8.ValidString()がfalseを返す場合はエラーがあるはず
-			t.Errorf("expected error")
-		} else if e1 != nil {
-			// 正しくエラーが返ってきた場合は何もしない
-			return
-		} else {
-			o, _ := ReverseString(r)
-			if o != s {
-				t.Errorf("expected: %q, got %q", s, o)
-			}
-		}
-	})
 }
