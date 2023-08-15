@@ -4,6 +4,36 @@ import (
 	"testing"
 )
 
+func TestNewUserId(t *testing.T) {
+	tests := []struct {
+		name           string
+		userID         string
+		expectedUserId UserId
+		expectedErr    error
+	}{
+		{"ValidUserId", "john_doe123", UserId{value: "john_doe123"}, nil},
+		{"InvalidUserIdStartingWithUnderscore", "_user123", UserId{}, InvalidUserIdError},
+		{"InvalidUserIdWithNotAllowedCharacters", "j+ohndoe123", UserId{}, InvalidUserIdError},
+		{"InvalidShortUserId", "ab", UserId{}, InvalidUserIdError},
+		{"InvalidLongUserId", "123456789abcdefghijkl", UserId{}, InvalidUserIdError},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			actual, err := NewUserId(test.userID)
+			if err != test.expectedErr {
+				t.Errorf("Expected no error, but got %v", err)
+			}
+			if actual != test.expectedUserId {
+				t.Errorf("Expected userID=%v, but got %v", test.expectedUserId, actual)
+			}
+			if err == nil && actual.Value() != test.userID {
+				t.Errorf("Expected userID=%v, but got %v", test.userID, actual.Value())
+			}
+		})
+	}
+}
+
 func TestIsValidUserID(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -69,95 +99,13 @@ func TestCheckUserIdLength(t *testing.T) {
 	}
 }
 
-func TestNewUserId(t *testing.T) {
-	tests := []struct {
-		name     string
-		userID   string
-		expected bool
-	}{
-		{"ValidUserId", "john_doe123", true},
-		{"InvalidUserIdStartingWithUnderscore", "_user123", false},
-		{"InvalidUserIdWithNotAllowedCharacters", "j+ohndoe123", false},
-		{"InvalidShortUserId", "ab", false},
-		{"InvalidLongUserId", "123456789abcdefghijkl", false},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			userID, err := NewUserId(test.userID)
-			if test.expected {
-				if err != nil {
-					t.Errorf("Expected no error, but got %v", err)
-				}
-				if userID.Value() != test.userID {
-					t.Errorf("Expected userID=%v, but got %v", test.userID, userID.Value())
-				}
-			} else {
-				if err == nil {
-					t.Errorf("Expected error, but got no error")
-				}
-			}
-		})
-	}
-}
-
-func TestNewUserName(t *testing.T) {
-	testCases := []struct {
-		name          string
-		firstName     string
-		lastName      string
-		expectedError error
-	}{
-		{"ValidUserName", "John", "Doe", nil},
-		{"InvalidUserNameWithEmptyFirstName", "", "Doe", InvalidNameError},
-		{"InvalidUserNameWithEmptyLastName", "John", "", InvalidNameError},
-		{"InvalidUserNameWithNumber", "123", "Doe", InvalidNameError},
-		{"InvalidUserNameWithNotAllowedCharacter", "_Alice", "Smith", InvalidNameError},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			actual, err := NewUserName(tc.firstName, tc.lastName)
-			if err != nil {
-				if err != tc.expectedError {
-					t.Errorf("Expected no error, but got %v", err)
-				}
-			} else {
-				if actual.FirstName() != tc.firstName {
-					t.Errorf("Expected value %v but got %v", tc.firstName, actual.FirstName())
-				}
-				if actual.LastName() != tc.lastName {
-					t.Errorf("Expected value %v but got %v", tc.lastName, actual.LastName())
-				}
-				if actual.FullName() != tc.firstName+" "+tc.lastName {
-					t.Errorf("Expected value '%v %v' but got %v", tc.firstName, tc.lastName, actual.FullName())
-				}
-			}
-		})
-	}
-}
-
-func TestIsValidName(t *testing.T) {
-	testCases := []struct {
-		name     string
-		input    string
-		expected bool
-	}{
-		{"ValidName", "validName", true},
-		{"InValidNameWithNotAllowedCharacters", "invalid_name_12345678901", false},
-		{"InValidNameWithSpace", " ", false},
-		{"InValidNameWithEmpty", "", false},
-		{"InValidNameWithNumber", "123", false},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			actual := isValidName(tc.input)
-			if actual != tc.expected {
-				t.Errorf("Expected %v but got %v", tc.expected, actual)
-			}
-		})
-	}
+func TestGerateUserId(t *testing.T) {
+	t.Run("GenerateUserId", func(t *testing.T) {
+		actual := GenerateUserId()
+		if len(actual.Value()) != 10 {
+			t.Errorf("Expected: %v, Got: %v", 10, len(actual.Value()))
+		}
+	})
 }
 
 func TestGenerateRandomString(t *testing.T) {
@@ -166,6 +114,7 @@ func TestGenerateRandomString(t *testing.T) {
 		length int
 	}{
 		{"ValidLength", 10},
+		{"InvalidZeroLength", 0},
 		{"InvalidLength", -1},
 	}
 
@@ -180,17 +129,103 @@ func TestGenerateRandomString(t *testing.T) {
 				if len(actual) != test.length {
 					t.Errorf("Expected length=%v, but got %v", test.length, len(actual))
 				}
-				_, err := NewUserId(actual)
-				if err != nil {
-					t.Errorf("Expected no error, but got %v", err)
+			}
+		})
+	}
+}
+
+func TestNewUserName(t *testing.T) {
+	tests := []struct {
+		name             string
+		firstName        string
+		lastName         string
+		expectedUserName UserName
+		expectedErr      error
+	}{
+		{"ValidUserName", "John", "Doe", UserName{firstName: "John", lastName: "Doe"}, nil},
+		{"InvalidUserNameWithEmptyFirstName", "", "Doe", UserName{}, InvalidNameError},
+		{"InvalidUserNameWithEmptyLastName", "John", "", UserName{}, InvalidNameError},
+		{"InvalidUserNameWithNumber", "123", "Doe", UserName{}, InvalidNameError},
+		{"InvalidUserNameWithNotAllowedCharacter", "_Alice", "Smith", UserName{}, InvalidNameError},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			actual, err := NewUserName(test.firstName, test.lastName)
+			if err != test.expectedErr {
+				t.Errorf("Expected no error, but got %v", err)
+			}
+			if actual != test.expectedUserName {
+				t.Errorf("Expected userUserName=%v, but got %v", test.expectedUserName, actual)
+			}
+			if err == nil {
+				if actual.FirstName() != test.firstName {
+					t.Errorf("Expected value %v but got %v", test.firstName, actual.FirstName())
+				}
+				if actual.LastName() != test.lastName {
+					t.Errorf("Expected value %v but got %v", test.lastName, actual.LastName())
+				}
+				if actual.FullName() != test.firstName+" "+test.lastName {
+					t.Errorf("Expected value '%v %v' but got %v", test.firstName, test.lastName, actual.FullName())
 				}
 			}
 		})
 	}
 }
 
+func TestIsValidName(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected bool
+	}{
+		{"ValidName", "validName", true},
+		{"InValidNameWithNotAllowedCharacters", "invalid_name_12345678901", false},
+		{"InValidNameWithSpace", " ", false},
+		{"InValidNameWithEmpty", "", false},
+		{"InValidNameWithNumber", "123", false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			actual := isValidName(test.input)
+			if actual != test.expected {
+				t.Errorf("Expected %v but got %v", test.expected, actual)
+			}
+		})
+	}
+}
+
+func TestNewUserAge(t *testing.T) {
+	tests := []struct {
+		name        string
+		age         int
+		expectedAge UserAge
+		expectedErr error
+	}{
+		{"ValidAge", 20, UserAge{value: 20}, nil},
+		{"InvalidAge", 151, UserAge{}, InvalidAgeError},
+		{"InvalidAge", -1, UserAge{}, InvalidAgeError},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			actual, err := NewUserAge(test.age)
+			if err != test.expectedErr {
+				t.Errorf("Expected no error, but got %v", err)
+			}
+			if actual != test.expectedAge {
+				t.Errorf("Expected userAge=%v, but got %v", test.expectedAge, actual)
+			}
+			if err == nil && actual.Value() != test.age {
+				t.Errorf("Expected value %v but got %v", test.age, actual.Value())
+			}
+		})
+	}
+}
+
 func TestIsValidAge(t *testing.T) {
-	testCases := []struct {
+	tests := []struct {
 		name     string
 		input    int
 		expected bool
@@ -202,11 +237,11 @@ func TestIsValidAge(t *testing.T) {
 		{"InValidOver", 151, false},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			actual := isValidAge(tc.input)
-			if actual != tc.expected {
-				t.Errorf("Expected %v but got %v", tc.expected, actual)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			actual := isValidAge(test.input)
+			if actual != test.expected {
+				t.Errorf("Expected %v but got %v", test.expected, actual)
 			}
 		})
 	}

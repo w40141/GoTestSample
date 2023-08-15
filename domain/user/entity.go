@@ -15,7 +15,7 @@ func NewUser(id, firstName, lastName string, age int) (User, error) {
 	if err != nil {
 		return User{}, err
 	}
-	userAge, err := NewAge(age)
+	userAge, err := NewUserAge(age)
 	return User{id: userId, name: userName, age: userAge}, nil
 }
 

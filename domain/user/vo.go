@@ -48,7 +48,7 @@ func checkUserIdLength(userId string) bool {
 }
 
 // 有効なuserIdを生成する
-func GenerateUserID() UserId {
+func GenerateUserId() UserId {
 	return UserId{value: generateRandomString(10)}
 }
 
@@ -99,7 +99,7 @@ type UserAge struct {
 	value int
 }
 
-func NewAge(value int) (UserAge, error) {
+func NewUserAge(value int) (UserAge, error) {
 	if !isValidAge(value) {
 		return UserAge{}, InvalidAgeError
 	}
