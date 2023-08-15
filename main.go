@@ -2,23 +2,27 @@ package main
 
 import (
 	"fmt"
+	"sync"
 	"time"
 )
 
 func main() {
 	// ゴルーチンを3つ起動
+	var wg sync.WaitGroup
 	for i := 0; i < 3; i++ {
-		go worker(i)
+		wg.Add(1)
+		go worker(&wg, i)
 	}
 
 	// メインゴルーチンを一定時間スリープさせる
-	time.Sleep(3 * time.Second)
-	fmt.Println("Main goroutine has finished.")
+	defer fmt.Println("Main goroutine has finished.")
+	wg.Wait()
 }
 
-func worker(id int) {
+func worker(wg *sync.WaitGroup, id int) {
 	fmt.Printf("Worker %d started\n", id)
 	// 一つだけゴルーチンをスリープさせる
+	defer wg.Done()
 	if id == 1 {
 		time.Sleep(2 * time.Second)
 	}

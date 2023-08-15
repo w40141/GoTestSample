@@ -14,9 +14,9 @@ var (
 )
 
 const (
-	charset       = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	patternUserId = `^[a-zA-Z0-9][a-zA-Z0-9_]*$`
-	patternName   = `^[a-zA-Z]+$`
+	_charset       = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	_patternUserId = `^[a-zA-Z0-9][a-zA-Z0-9_]*$`
+	_patternName   = `^[a-zA-Z]+$`
 )
 
 var seededRand *rand.Rand = rand.New(
@@ -39,7 +39,7 @@ func isValidUserID(userId string) bool {
 }
 
 func checkUserIdCharacters(userId string) bool {
-	match, _ := regexp.MatchString(patternUserId, userId)
+	match, _ := regexp.MatchString(_patternUserId, userId)
 	return match
 }
 
@@ -56,7 +56,7 @@ func generateRandomString(length int) string {
 	s := ""
 	if length > 0 {
 		for i := 0; i < length; i++ {
-			s += string(charset[seededRand.Intn(len(charset))])
+			s += string(_charset[seededRand.Intn(len(_charset))])
 		}
 	}
 	return s
@@ -64,6 +64,10 @@ func generateRandomString(length int) string {
 
 func (u UserId) Value() string {
 	return u.value
+}
+
+func (u UserId) Equal(o UserId) bool {
+	return u.value == o.value
 }
 
 type UserName struct {
@@ -79,7 +83,7 @@ func NewUserName(firstName, lastName string) (UserName, error) {
 }
 
 func isValidName(name string) bool {
-	match, _ := regexp.MatchString(patternName, name)
+	match, _ := regexp.MatchString(_patternName, name)
 	return match
 }
 
@@ -112,4 +116,8 @@ func isValidAge(value int) bool {
 
 func (a UserAge) Value() int {
 	return a.value
+}
+
+func (a UserAge) Equal(o UserAge) bool {
+	return a.value == o.value
 }
