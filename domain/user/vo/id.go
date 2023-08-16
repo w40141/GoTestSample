@@ -43,7 +43,7 @@ func checkUserIdLength(userId string) bool {
 }
 
 // 有効なuserIdを生成する
-func GenerateUserId() UserId {
+func GenerateNewUserId() UserId {
 	return UserId{value: generateRandomString(10)}
 }
 
